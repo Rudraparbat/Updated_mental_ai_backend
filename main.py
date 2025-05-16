@@ -1,8 +1,8 @@
 from collections import defaultdict
 from fastapi import FastAPI , HTTPException , Depends , File , Form , UploadFile , Request , Response , WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse 
-from models import *
-from database import *
+from db.models import *
+from db.database import *
 from sqlalchemy.orm import Session
 from pydantic import BaseModel , Field
 import random
@@ -12,6 +12,8 @@ from uuid import UUID
 from ai.ai import *
 from ai.ai_mind import *
 from consumer import *
+from middlewares.http_middlewares import *
+from middlewares.websocket_middleware import *
 # Creating The App
 
 app = FastAPI()

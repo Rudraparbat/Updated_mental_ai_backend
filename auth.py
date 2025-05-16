@@ -2,12 +2,13 @@ from datetime import timedelta , datetime
 from typing import Annotated
 from fastapi import APIRouter
 from pydantic import BaseModel
-from models import User
-from database import Sessions
+from db.models import User
+from db.database import Sessions
 from sqlalchemy.orm import Session
 from fastapi import FastAPI , Depends ,  HTTPException , Response , Request 
 from starlette import status
 from jose import jwt , JWTError
+import os
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer , OAuth2PasswordRequestForm
 
@@ -18,8 +19,8 @@ router = APIRouter(
 )
 
 # added secret key and the algorithm
-SECRET_KEY = "RUDRAANASUYASAYANANTIKAANUSHKA82762"
-ALGORITHM = 'HS256'
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 # dependency for hashing password 
 bcrypt_context = CryptContext(schemes=['bcrypt'] , deprecated = 'auto')
