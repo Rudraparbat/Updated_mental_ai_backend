@@ -1,5 +1,5 @@
 from sqlalchemy import Column , table  , Integer, String  , ForeignKey
-from database import Base
+from db.database import Base
 
 # inherit model from Base
 

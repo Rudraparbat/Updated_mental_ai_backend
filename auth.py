@@ -11,6 +11,9 @@ from jose import jwt , JWTError
 import os
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer , OAuth2PasswordRequestForm
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add a router to seperate from mainpy file
 router = APIRouter(

@@ -9,6 +9,9 @@ import auth
 from jose import jwt , JWTError
 from passlib.context import CryptContext
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")

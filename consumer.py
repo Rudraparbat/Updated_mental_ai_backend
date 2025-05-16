@@ -13,6 +13,7 @@ class ConnectionManager :
       self.active_user[self.chat_room_id].append(websocket)
 
   async def disconnect(self , websocket : WebSocket) :
+      self.psychologist.Delete_user_data()
       self.active_user[self.chat_room_id].remove(websocket)
 
   async def broadcast(self ,  message : str) :
