@@ -1,6 +1,7 @@
 alembic==1.15.2
 annotated-types==0.7.0
 anyio==4.9.0
+asyncpg==0.30.0
 bcrypt==4.3.0
 certifi==2025.4.26
 cffi==1.17.1
@@ -37,6 +38,7 @@ pinecone==6.0.2
 pinecone-plugin-interface==0.0.7
 protobuf==5.29.4
 protoc-gen-openapiv2==0.0.1
+psycopg2-binary==2.9.10
 pyasn1==0.4.8
 pycparser==2.22
 pydantic==2.11.4

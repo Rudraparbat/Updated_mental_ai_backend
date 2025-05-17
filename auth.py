@@ -1,8 +1,8 @@
 from datetime import timedelta , datetime
 from typing import Annotated
 from fastapi import APIRouter
-from pydantic import BaseModel
-from db.models import User
+from pydantic import BaseModel, EmailStr
+from db.models import *
 from db.database import Sessions
 from sqlalchemy.orm import Session
 from fastapi import FastAPI , Depends ,  HTTPException , Response , Request 
@@ -34,6 +34,7 @@ auth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 class usermodel(BaseModel) :
     name : str
+    email : EmailStr
     password : str
 
 
@@ -50,38 +51,49 @@ db_dependency = Annotated[Session , Depends(get_db)]
 
 # Writing the sign api endpoints 
 @router.post('/' , status_code=status.HTTP_200_OK)
-async def create_user(db : db_dependency , user : usermodel) :
-    usertable = User()
+async def create_user(db : db_dependency , user : usermodel, response : Response) :
+    usertable = MentalUser()
     usertable.username = user.name
-    usertable.password = bcrypt_context.hash(user.password)
+    usertable.email = user.email
+    usertable.set_password = bcrypt_context.hash(user.password)
 
     db.add(usertable)
     db.commit()
+    db.refresh(usertable)
 
+    token = CreateJwtTokenForLoginUser(usertable.id ,user.name , timedelta(days=7))
+
+    response.set_cookie(
+        key="access_token",
+        value=str(token),
+        httponly=True,          
+        secure=False,           
+        samesite="lax",         
+        max_age=60*60*24*7     
+    )
     return {
         "data" : user,
         "message" : "Successfully created user"
     }
-
 
 # For Authentication
 
 @router.post('/token')
 async def login_user(db : db_dependency , user : Annotated[OAuth2PasswordRequestForm  , Depends()] , response : Response) :
     try :
-        username = db.query(User).filter(User.username == user.username).first()
+        username = db.query(MentalUser).filter(MentalUser.email == user.username).first()
         if username is None :
             raise  HTTPException(status_code=404, detail="User not found")
-        if (bcrypt_context.verify(user.password , username.password)) :
-            token = CreateJwtTokenForLoginUser(username.id ,user.username , timedelta(minutes=1))
+        if (bcrypt_context.verify(user.password , username.set_password)) :
+            token = CreateJwtTokenForLoginUser(username.id ,username.username , timedelta(days = 7))
 
             response.set_cookie(
                 key="access_token",
                 value=str(token),
-                httponly=True,          # Prevent JavaScript access (secure)
-                secure=False,           # True if you're using HTTPS
-                samesite="lax",         # Helps prevent CSRF
-                max_age=120    
+                httponly=True,      
+                secure=False,           
+                samesite="lax",        
+                max_age= 60*60*24*7    
             )
             return {
                 "token" : str(token) , 
@@ -128,14 +140,14 @@ async def CreateNewToken(response : Response , user : dict = Depends(GetcurrentU
     username = str(user.get("username"))
     userid = str(user.get("id"))
 
-    new_token = CreateJwtTokenForLoginUser( userid, username , timedelta(minutes=1))
+    new_token = CreateJwtTokenForLoginUser( userid, username , timedelta(days=7))
     response.set_cookie(
             key="access_token",
             value=str(new_token),
             httponly=True,          
             secure=False,        
             samesite="lax",     
-            max_age=90    
+            max_age=60*60*24*7     
         )
     return {"message" : "Token Generated with new timestamp is successfull" , "new_token" : str(new_token)}
         

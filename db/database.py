@@ -1,14 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import os 
+from dotenv import load_dotenv
+load_dotenv()
 
 # Defining Database url
 
-DB_URL = "sqlite:///./user.db"
+DB_URL = os.getenv("PG_DB_URL")
 
 # initilizing engine
 
-engine = create_engine(DB_URL , connect_args={"check_same_thread" : False})
+engine = create_engine(DB_URL)
 
 # initializing session
 
