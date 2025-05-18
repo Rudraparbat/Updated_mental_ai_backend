@@ -64,8 +64,8 @@ class BrainForAI:
             return None
         question = trimmed[0]['q']
         answer = trimmed[0]['a']
-        emotion = trimmed[0]['e']
-        return [question , answer , emotion]
+
+        return [question , answer]
 
     def Delete(self) :
         self.index.delete(delete_all=True , namespace=self.namespace)
