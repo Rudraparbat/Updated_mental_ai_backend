@@ -29,13 +29,14 @@ ALLOW_ORIGINS = [
 ]
 # include middleware
 app.add_middleware(
-    RateLimiterMiddleware,
     CORSMiddleware,
-    allow_origins=ALLOW_ORIGINS, 
+    allow_origins=ALLOW_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"],
-  )
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+app.add_middleware(RateLimiterMiddleware)
 
 # bind the engine 
 Base.metadata.create_all(bind = engine)
