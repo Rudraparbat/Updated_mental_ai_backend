@@ -157,9 +157,8 @@ async def CreateNewToken(response : Response , user : dict = Depends(GetcurrentU
 @router.get('/authstatus/')
 async def GetUserAuthStatus(user : dict = Depends(GetcurrentUserFromCookie)) :
     if user is None :
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    
-    return {"authenticated" : True , "message" : "User is already loggedin"}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) 
+    return {"authenticated" : True , "user_id"  : user.get("id") ,  "message" : "User is already loggedin"}
 
 
 # To Logout ANy user 
