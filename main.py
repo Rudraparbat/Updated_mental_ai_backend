@@ -14,14 +14,28 @@ from ai.ai_mind import *
 from consumer import *
 from middlewares.http_middlewares import *
 from middlewares.websocket_middleware import *
-# Creating The App
+from fastapi.middleware.cors import CORSMiddleware
 
+# Creating The App
 app = FastAPI()
 # include router
 app.include_router(auth.router)
 
+
+# set the origins
+ALLOW_ORIGINS = [
+    "http://localhost:5173/",
+    "https://mental-health-bot-eight.vercel.app/"
+]
 # include middleware
-app.add_middleware(RateLimiterMiddleware)
+app.add_middleware(
+    RateLimiterMiddleware,
+    CORSMiddleware,
+    allow_origins=ALLOW_ORIGINS, 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+  )
 
 # bind the engine 
 Base.metadata.create_all(bind = engine)
@@ -38,6 +52,8 @@ def get_db() :
         db.close()
 
 # We are using pydantic for data vallidaTIon
+
+
 
 @app.get('/')
 async def index(request : Request , db : Session = Depends(get_db) ) :

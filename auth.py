@@ -67,8 +67,8 @@ async def create_user(db : db_dependency , user : usermodel, response : Response
         key="access_token",
         value=str(token),
         httponly=True,          
-        secure=False,           
-        samesite="lax",         
+        secure=True,           
+        samesite="None",         
         max_age=60*60*24*7     
     )
     return {
@@ -91,8 +91,8 @@ async def login_user(db : db_dependency , user : Annotated[OAuth2PasswordRequest
                 key="access_token",
                 value=str(token),
                 httponly=True,      
-                secure=False,           
-                samesite="lax",        
+                secure=True,           
+                samesite="None",        
                 max_age= 60*60*24*7    
             )
             return {
@@ -145,8 +145,8 @@ async def CreateNewToken(response : Response , user : dict = Depends(GetcurrentU
             key="access_token",
             value=str(new_token),
             httponly=True,          
-            secure=False,        
-            samesite="lax",     
+            secure=True,        
+            samesite="None",     
             max_age=60*60*24*7     
         )
     return {"message" : "Token Generated with new timestamp is successfull" , "new_token" : str(new_token)}
