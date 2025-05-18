@@ -113,7 +113,7 @@ def CreateJwtTokenForLoginUser(userid : str , name : str , expires : timedelta) 
 
 # after putting that dependency it actually search for that token in cookies and get the user information
 async def GetcurrentUserFromCookie(request: Request):
-    token = request.cookies.get("access_token")  # ← This reads your cookie!
+    token = request.cookies.get("access_token")  
     print(token)
     if token is None:
         raise HTTPException(status_code=401, detail="Token not found in cookies")
