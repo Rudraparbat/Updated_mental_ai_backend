@@ -23,14 +23,15 @@ app.include_router(auth.router)
 
 
 # set the origins
-ALLOW_ORIGINS = [
-    "http://localhost:5173/",
+allow_origin = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
     "https://mental-health-bot-eight.vercel.app/"
 ]
 # include middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOW_ORIGINS,
+    allow_origins=allow_origin,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
