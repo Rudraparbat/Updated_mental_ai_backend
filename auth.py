@@ -73,6 +73,7 @@ async def create_user(db : db_dependency , user : usermodel, response : Response
     )
     return {
         "data" : user,
+        "user_id" : usertable.id,
         "message" : "Successfully created user"
     }
 
@@ -158,7 +159,7 @@ async def GetUserAuthStatus(user : dict = Depends(GetcurrentUserFromCookie)) :
     if user is None :
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     
-    return {"message" : "User is already loggedin"}
+    return {"authenticated" : True , "message" : "User is already loggedin"}
 
 
 # To Logout ANy user 
