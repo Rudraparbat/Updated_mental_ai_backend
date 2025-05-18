@@ -19,4 +19,7 @@ class ConnectionManager :
   async def broadcast(self ,  message : str) :
       for connections in self.active_user[self.chat_room_id] :
           ai_answer = await self.psychologist.ask(message)
-          await connections.send_text(ai_answer)
+          try:
+            await connections.send_text(ai_answer)
+          except Exception as e:
+            print("Failed to send message:", e)
