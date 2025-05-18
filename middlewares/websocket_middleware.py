@@ -37,6 +37,7 @@ def websocket_auth(handler):
     async def wrapper(websocket: WebSocket, *args, **kwargs):
         # get token from the cookies
         token = websocket.cookies.get("access_token")
+        print("The token i got is" , token)
         if not token:
             await websocket.close()
             return

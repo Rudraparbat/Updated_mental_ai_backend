@@ -137,7 +137,7 @@ button {
   // Replace this with your actual WebSocket endpoint
   let ids = 1233333333
   console.log(ids)
-const socket = new WebSocket(`ws://127.0.0.1:8000/ws/chat/`);
+const socket = new WebSocket(`wss://menatl-bot-service.onrender.com/ws/chat/`);
 
 const chatBox = document.getElementById("chat-box");
 const messageInput = document.getElementById("messageInput");
@@ -190,7 +190,7 @@ async def htmlview() :
 async def websocketendpoint(websocket : WebSocket) :
     # accept the wesocket conn
     await websocket.accept() 
-    print(websocket.state.user)
+    print("socket binded user is",websocket.state.user)
     await manager.connect(websocket.state.user , websocket)
     try :
         while True :
