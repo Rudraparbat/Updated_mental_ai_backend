@@ -18,14 +18,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
 
-def get_token_from_cookies(headers: list[tuple[bytes, bytes]]) -> str | None:
-    for name, value in headers:
-        if name == b"cookie":
-            cookies = value.decode().split("; ")
-            for cookie in cookies:
-                if cookie.startswith("access_token="):
-                    return cookie.split("=", 1)[1]
-    return None
 async def verfiy_user(token : str) -> dict | None :
     try:
         user = jwt.decode(str(token), SECRET_KEY, algorithms=[ALGORITHM])
@@ -43,7 +35,8 @@ async def verfiy_user(token : str) -> dict | None :
 def websocket_auth(handler):
     @wraps(handler)
     async def wrapper(websocket: WebSocket, *args, **kwargs):
-        token = get_token_from_cookies(websocket.scope["headers"])
+        # get token from the cookies
+        token = websocket.cookies.get("access_token")
         if not token:
             await websocket.close()
             return

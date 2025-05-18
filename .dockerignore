@@ -1,0 +1,37 @@
+__pycache__/
+*.pyc
+*.pyo
+
+
+# Virtual environment
+venv/
+env/
+envs/
+chater/
+fastapp/
+guide.txt
+
+# Database
+db.sqlite3
+
+*.log
+logs/
+
+.env
+.env.local
+.env.testing
+
+data/
+
+.git/
+.hg/
+
+dist/
+build/
+*.tar.gz
+*.zip
+
+
+.vscode/
+.idea/
+*.swp
