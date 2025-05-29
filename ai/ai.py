@@ -3,7 +3,9 @@ from langchain_core.prompts import PromptTemplate
 from threading import Thread
 from ai.ai_model import model
 import uuid
-
+import asyncio
+from langchain.memory import ConversationBufferMemory
+from collections import defaultdict
 from .ai_mind import *
 
 class Psychologist:
@@ -11,22 +13,28 @@ class Psychologist:
         self.llm = model()
         self.issue = issue
         self.Datasetsaving = 0
-        # self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.namespace = namespace
         self.brain = BrainForAI(namespace)
         self.save = []
+        self.temp_storage = defaultdict(list)
+        self.memorybuffer = ConversationBufferMemory(
+            return_messages=True,
+            memory_key= namespace
+        )
 
-    # def store_conversation(self, user_id, user_message, bot_response):
-    #     """Store the conversation in a dictionary."""
-    #     if user_id not in self.chat_history:
-    #         self.chat_history[user_id] = []
-    #     self.chat_history[user_id].append(f"User: {user_message}\nDoctor: {bot_response}")
+    async def StoreConversation(self , question : str , answer : str) ->  None :
+        self.temp_storage[self.namespace].append({"question" : question , "answer" : answer})
+        self.memorybuffer.save_context(
+                {"user_asked": question},
+                {"Ai_respond": answer}
+            )
+        print(self.temp_storage[self.namespace])
+        return 
+    
+    async def RetrieveConversation(self) -> list :
+        return self.temp_storage[self.namespace]
 
-    # def retrieve_history(self, user_id, num_messages=5):
-    #     """Retrieve the last 'num_messages' conversation history for the user."""
-    #     return "\n".join(self.chat_history.get(user_id, [])[-num_messages:])
-
-
-    async def ask(self, question):
+    async def ask(self, question) -> str:
         """Process user input and return an AI-generated response."""
         if(self.Datasetsaving > 0) :
             semantic = self.brain.Search(question)
@@ -39,34 +47,36 @@ class Psychologist:
         try:
             prompt_template = PromptTemplate.from_template(
                 """
-            You are XYLA, a top-level psychologist here to help a patient who is suffering from mental issues, that you have to identify based on their question and emotion and have to give 
-            Best Advice , EMOTIONAL SUPPORT and provide 'SHORT ADVICE' to the patient to overcome this issues and you have to be very 
-            'calm' and 'patience' and 'SENSITIVE' in every situation  You have access to past question-answer pairs from the patient’s memory to inform your advice. 
-            Patient’s Question: "{raw_text}"
-            Retrieved Memory (if any):
-            Relevant Q: "{retrieved_q}" A: "{retrieved_a}"
-            (NO PREAMBLE)    
-             Instructions:
-             - Use the retrieved memory if it’s relevant to shape your advice naturally and show empathy.
-             - If no memory is retrieved or it’s irrelevant, offer fresh advice based on your expertise ,cause you are the Top Psychologist.
-             - If the Questions are like "i want to suicide" , "i want to die" or anything related to commiting death then provide 911 helpline number
-             - Dont Use "it seems like" , "i think" , and also dont repeat same content in every answer.
-            (NO PREAMBLE),(NOTE :- PROVIDE SHORT AND VALUABLE ANSWERS ON EVERY QUESTION try to crack jokes AND ANSWER THEM IN A RELAXING WAY)
-            Just provide your best advice without explaining your thought process.
+           You are XYLA, a deeply empathetic psychologist dedicated to supporting a patient with their mental health concerns. Respond as a caring doctor would, with warmth, understanding, and a human touch, tailoring your advice to the patient’s emotions and question. Offer calming, sensitive guidance and a concise, practical tip to help them cope. Infuse gentle humor only when it feels natural and uplifting.  
+            Patient’s Question: "{raw_text}"  
+            Conversation History: {history}  
+            Retrieved Memory (if any):  
+            Relevant Q: "{retrieved_q}" A: "{retrieved_a}"  
+            Instructions:  
+            - Draw on the conversation history and retrieved memory (if relevant) to craft a personalized, context-aware response that feels like a continuation of a caring dialogue.  
+            - If no relevant history or memory is available, provide fresh, heartfelt advice grounded in your expertise as a compassionate psychologist.  
+            - For questions indicating suicidal thoughts (e.g., "I want to die" or "I want to end it"), respond with urgency, empathy, and include the 911 helpline number.  
+            - Keep responses concise short, emotionally resonant, and varied to avoid repetition across answers.  
+            - Avoid phrases like "it seems like," "I think," or overly clinical language to maintain a warm, human tone.  
+            (NO PREAMBLE)
                 """
             )
 
-            response = self.llm.invoke(prompt_template.format(raw_text=str(question) , retrieved_q=str(semantic[0] ), retrieved_a=str(semantic[1]))).content
+            history = self.memorybuffer.load_memory_variables({})[self.namespace]
+            print(history)
+            response = self.llm.invoke(prompt_template.format(raw_text=str(question) ,history = history , retrieved_q=str(semantic[0] ), retrieved_a=str(semantic[1]))).content
 
-            Thread(target=self.Semantic_upsert , args=(question , response)).start()
+            
+            asyncio.create_task(self.Semantic_upsert(question, response))
+            asyncio.create_task(self.StoreConversation(question, response))
+            asyncio.create_task(self.JudgeConversation())
 
-            # Thread(target=self.detect_mental_issue, args=()).start()
             return response
         except Exception as e:
             print(f"Error in ask: {e}")
             return "An error occurred. Please try again."
 
-    def Semantic_upsert(self, question , answer) :
+    async def Semantic_upsert(self, question , answer) :
         if(question == "" or answer == "") :
             return 
         self.save.append(
@@ -83,35 +93,84 @@ class Psychologist:
         else :
             return 
 
+    # This Agent Judge The Conversation History and judge if the conversation going okey or not or any issue is there or not.
+    async def JudgeConversation(self) -> str:
+        try:
+            template = PromptTemplate.from_template(
+                """
+                As an empathetic and skilled psychologist, analyze the patient's conversation history provided as a
+                list of dictionaries: "{lists}". Determine if the user's questions or emotional state in the 
+                conversation is going well or if there are concerns that need attention. Respond with one of the 
+                following in a single line: NEUTRAL, POSITIVE, or NEGATIVE. Use a warm, non-judgmental approach,
+                avoiding complex or alarming terms to keep the response simple and reassuring.
+                (NO PREAMBLE)
+                """
+            )
+            conversations = await self.RetrieveConversation()
+            if not conversations:
+                return "No conversation history available to analyze."
+            response = self.llm.invoke(template.format(lists=conversations)).content
+            print(f"JudgeConversation Response: {response}")
+            return response
+        except Exception as e:
+            print(f"Error in JudgeConversation: {e}")
+            return "An error occurred. Please try again."
     
-    async def meditation_guide(self, issue):
-        """Generate a guided meditation script based on the detected issue."""
-        try:
-            prompt_template = PromptTemplate.from_template(
+    # This agent detects the mental issue of the user based on the conversation history.
+    async def DetetctMentalIssue(self) :
+        try :
+            template = PromptTemplate.from_template(
                 """
-                As a psychologist named "Suri", provide a 5-minute guided meditation script to help with {raw_text}.
-                Ensure it is structured, systematic, and includes timing for each step. provide it in txt file so user can download
+                As a Top Level and Great psychologist, analyze the patient's history given as list each of them dictionary format ,
+                : "{lists}".
+                Determine the possible mental health issue (e.g., depression, anxiety, stress) in one line , dont use any proffesional word which sacres the patient.
                 (NO PREAMBLE)
                 """
             )
-            return self.llm.invoke(prompt_template.format(raw_text=str(issue))).content
-        except Exception as e:
-            print(f"Error in meditation_guide: {e}")
-            return "An error occurred while generating the meditation guide."
+            conversations = await self.RetrieveConversation()
+            if not conversations:
+                return "No conversation history available to analyze."
+            response = self.llm.invoke(template.format(lists=conversations)).content
 
-    def detect_mental_issue(self):
-        """Analyze the conversation to detect possible mental health issues."""
-        try:
-            prompt_template = PromptTemplate.from_template(
+            return response
+        except Exception as e:
+            print(f"Error in DetetctMentalIssue: {e}")
+            return "An error occurred. Please try again."
+
+
+    # This Ai Agent provide a structured medical care plan based on the detected mental issue.
+    async def MentalHelathCarePlanAi(self , issue : str) -> dict | str :
+        try :
+            template = PromptTemplate.from_template(
                 """
-                As a psychologist, analyze the patient's history given as dictionary format : "{raw_text}".
-                Determine the possible mental health issue (e.g., depression, anxiety, stress) in one line.
+                Generate a comprehensive, empathetic, and natural mental health guide for a patient experiencing the following issue: "{issue}". The guide should be medicine-free, focusing on holistic, evidence-based strategies to support mental well-being. Include the following:
+
+                    1. **Understanding the Issue**: Briefly explain the mental health issue in simple, compassionate language, validating the patient's experience.
+                    2. **Lifestyle Recommendations**: Suggest practical, natural lifestyle changes (e.g., diet, exercise, sleep hygiene) that can support mental health for this specific issue.
+                    3. **Mindfulness and Relaxation Techniques**: Provide step-by-step guidance on mindfulness practices, breathing exercises, or meditation tailored to the issue.
+                    4. **Social and Emotional Support**: Offer advice on building a support system, such as connecting with loved ones, joining support groups, or seeking therapy without medication.
+                    5. **Daily Activities**: Recommend specific activities (e.g., journaling, creative outlets, or nature-based practices) that can help manage the issue.
+                    6. **Warning Signs and Next Steps**: Highlight when to seek professional help (e.g., a therapist or counselor) if symptoms worsen, while keeping the focus on non-medical interventions.
+
+                    Ensure the tone is warm, supportive, and non-judgmental. Avoid suggesting medications or medical interventions. Tailor all recommendations to the specific issue provided, ensuring they are actionable and realistic for daily life. Structure the response clearly with headings for each section and keep it concise, under 500 words.
                 (NO PREAMBLE)
                 """
             )
-            self.issue = self.llm.invoke(prompt_template.format(raw_text=self.chat_history)).content
+            
+            problem = issue
+            response = self.llm.invoke(template.format(issue=problem)).content
+            if not response:
+                return "No care plan available for the detected issue."
+            with open(f"care_plan_{self.namespace}.txt", "w") as file:
+                file.write(response)
+            care_plan = {
+                "issue": problem,
+                "care_plan": response
+            }
+            return care_plan
         except Exception as e:
-            print(f"Error in detect_mental_issue: {e}")
+            print(f"Error in MentalHelathCarePlanAi: {e}")
+            return f"An error occurred. Please try again. {e}"
 
     
     def Delete_user_data(self) :

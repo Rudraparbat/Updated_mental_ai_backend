@@ -155,7 +155,7 @@ button {
   // Replace this with your actual WebSocket endpoint
   let ids = 1233333333
   console.log(ids)
-const socket = new WebSocket(`wss://menatl-bot-service.onrender.com/ws/chat/`);
+const socket = new WebSocket(`ws://127.0.0.1:8000/ws/chat/`);
 
 const chatBox = document.getElementById("chat-box");
 const messageInput = document.getElementById("messageInput");
@@ -167,7 +167,6 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
   appendMessage("📩 Server: " + event.data);
 };
-
 socket.onclose = () => {
   appendMessage("❌ Disconnected from server");
 };

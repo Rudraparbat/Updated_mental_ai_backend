@@ -27,7 +27,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware) :
         current_ip_address = request.client.host
         request.state.ip_address = current_ip_address
         request.state.user = await self.getuser(request)
-        print(request.state.user)
         response = await call_next(request)
         response.headers["X-IP-Address"] = current_ip_address
         return response
@@ -35,7 +34,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware) :
     # helper function to decode cookie and get the user
     async def getuser(self, request : Request) :
         token = request.cookies.get("access_token") 
-        print(token) 
         if token is None:
             return None
         try:

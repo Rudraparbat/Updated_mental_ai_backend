@@ -14,6 +14,11 @@ class ConnectionManager :
 
   async def disconnect(self , websocket : WebSocket) :
       self.psychologist.Delete_user_data()
+      mental_health_judger = await self.psychologist.JudgeConversation()
+      if mental_health_judger == "NEGATIVE":
+          issue = await self.psychologist.DetetctMentalIssue()
+          print("Detected Mental Issue:", issue)
+          await self.psychologist.MentalHelathCarePlanAi(issue)
       self.active_user[self.chat_room_id].remove(websocket)
 
   async def broadcast(self ,  message : str) :
