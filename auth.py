@@ -97,8 +97,10 @@ async def login_user(db : db_dependency , user : Annotated[OAuth2PasswordRequest
                 max_age= 60*60*24*7    
             )
             return {
-                "token" : str(token) , 
-                "message" : "user Authenticated successfully"
+                "message" : "user Authenticated successfully",
+                "authenticated" : True,
+                "user_id" : username.id,
+                "data" : username
             }
         else :
             raise HTTPException(status_code=404 , detail=f"{user.username} mismatched the password")
